@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Shield, 
-  User, 
-  Lock, 
-  Edit, 
-  Trash2, 
+import {
+  Shield,
+  User,
+  Lock,
+  Edit,
+  Trash2,
   Plus,
   CheckCircle2,
   XCircle,
@@ -92,8 +92,8 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
       setIsModalOpen(false);
       setEditingUser(null);
     } catch (error: any) {
-       console.error('Error saving user:', error);
-       alert(error.message || 'Erro ao salvar usuário.');
+      console.error('Error saving user:', error);
+      alert(error.message || 'Erro ao salvar usuário.');
     }
   };
 
@@ -132,7 +132,7 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
             <p className="text-sm text-blue-700">Gerencie usuários e defina exatamente quais módulos cada um poderá acessar.</p>
           </div>
         </div>
-        <button 
+        <button
           onClick={handleOpenCreate}
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
         >
@@ -187,13 +187,13 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button 
+                    <button
                       onClick={() => handleOpenEdit(user)}
                       className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                     >
                       <Edit size={18} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteUser(user.id)}
                       className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                     >
@@ -215,7 +215,7 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
               <h2 className="text-lg font-black text-slate-900">
                 {editingUser ? 'Editar Usuário' : 'Novo Usuário (Convite)'}
               </h2>
-              <button 
+              <button
                 onClick={() => {
                   setIsModalOpen(false);
                   setEditingUser(null);
@@ -234,7 +234,7 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
                     <User size={16} className="text-blue-600" />
                     Dados Básicos
                   </h3>
-                  
+
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nome Completo</label>
                     <div className="relative">
@@ -315,7 +315,7 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
                     <ShieldCheck size={16} className="text-blue-600" />
                     Permissões de Módulo
                   </h3>
-                  
+
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
                     {modules.map(({ id, label, icon: Icon }) => (
                       <label key={id} className="flex items-center gap-3 p-2 hover:bg-white rounded-xl transition-all cursor-pointer group">
