@@ -63,8 +63,33 @@ export default function Inventory({ data }: { data: ReturnType<typeof useERPData
   return (
     <div className="space-y-6">
       {/* SECTION HEADER */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-800">Produtos</h2>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-bold text-slate-800">Gestão de Estoque</h2>
+      </div>
+
+      {/* Dashboard Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+          <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <Package size={28} />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 text-left uppercase tracking-widest mb-1">Total de Produtos</p>
+            <p className="text-3xl font-black text-slate-800 leading-none">{data.products.length}</p>
+          </div>
+        </div>
+        
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+          <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+            <AlertTriangle size={28} />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 text-left uppercase tracking-widest mb-1">Estoque Baixo</p>
+            <p className="text-3xl font-black text-slate-800 leading-none">
+              {data.products.filter(p => p.stock <= p.minStock).length}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* SEARCH + ACTIONS BAR */}
