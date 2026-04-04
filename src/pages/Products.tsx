@@ -30,7 +30,8 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
   const [formData, setFormData] = useState({
     barcode: '',
     costPrice: 0,
-    margin: 0
+    margin: 0,
+    salePrice: 0
   });
 
   const filteredProducts = data.products.filter(p =>
@@ -75,7 +76,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
     const fData = new FormData(e.currentTarget);
     const costPrice = Number(formData.costPrice);
     const margin = Number(formData.margin);
-    const salePrice = costPrice * (1 + margin / 100);
+    const salePrice = Number(formData.salePrice);
     
     let code = fData.get('code') as string;
     
@@ -109,7 +110,23 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
     setEditingProduct(null);
   };
 
-  const salePricePreview = formData.costPrice * (1 + formData.margin / 100);
+  // helpers para sincronizar os campos de preço
+  const handleCostPriceChange = (value: number) => {
+    const newSalePrice = value * (1 + formData.margin / 100);
+    setFormData(prev => ({ ...prev, costPrice: value, salePrice: newSalePrice }));
+  };
+
+  const handleMarginChange = (value: number) => {
+    const newSalePrice = formData.costPrice * (1 + value / 100);
+    setFormData(prev => ({ ...prev, margin: value, salePrice: newSalePrice }));
+  };
+
+  const handleSalePriceChange = (value: number) => {
+    const newMargin = formData.costPrice > 0
+      ? ((value / formData.costPrice) - 1) * 100
+      : 0;
+    setFormData(prev => ({ ...prev, salePrice: value, margin: Math.round(newMargin * 100) / 100 }));
+  };
 
   return (
     <div className="space-y-6">
@@ -161,7 +178,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
           <button
             onClick={() => {
               setEditingProduct(null);
-              setFormData({ barcode: '', costPrice: 0, margin: 0 });
+              setFormData({ barcode: '', costPrice: 0, margin: 0, salePrice: 0 });
               setIsModalOpen(true);
             }}
             className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm transition-all"
@@ -190,7 +207,8 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       setFormData({
                         barcode: product.barcode || '',
                         costPrice: product.costPrice || 0,
-                        margin: product.margin || 0
+                        margin: product.margin || 0,
+                        salePrice: product.salePrice || 0
                       });
                       setIsModalOpen(true);
                     }}
@@ -298,7 +316,8 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                             setFormData({
                               barcode: product.barcode || '',
                               costPrice: product.costPrice || 0,
-                              margin: product.margin || 0
+                              margin: product.margin || 0,
+                              salePrice: product.salePrice || 0
                             });
                             setIsModalOpen(true);
                           }}
@@ -426,7 +445,14 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                   <h3 className="text-sm font-bold text-blue-600 uppercase tracking-widest">Preços e Estoque</h3>
                   <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100 shadow-sm flex items-center gap-3">
                     <span className="text-xs text-blue-600 font-bold uppercase tracking-wider">Preço de Venda:</span>
-                    <span className="text-xl font-black text-blue-700">{formatCurrency(salePricePreview)}</span>
+                    <span className="text-blue-600 font-bold text-sm">R$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.salePrice}
+                      onChange={(e) => handleSalePriceChange(Number(e.target.value))}
+                      className="w-28 px-2 py-1 bg-white border border-blue-200 rounded-lg outline-none focus:border-blue-500 text-xl font-black text-blue-700 text-right transition-all"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -437,7 +463,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       step="0.01"
                       name="costPrice"
                       value={formData.costPrice}
-                      onChange={(e) => setFormData(prev => ({ ...prev, costPrice: Number(e.target.value) }))}
+                      onChange={(e) => handleCostPriceChange(Number(e.target.value))}
                       required
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
                     />
@@ -449,7 +475,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       step="0.1"
                       name="margin"
                       value={formData.margin}
-                      onChange={(e) => setFormData(prev => ({ ...prev, margin: Number(e.target.value) }))}
+                      onChange={(e) => handleMarginChange(Number(e.target.value))}
                       required
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
                     />
