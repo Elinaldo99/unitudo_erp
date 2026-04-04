@@ -100,7 +100,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
           <input
             type="text"
             placeholder="Buscar por nome, código ou barras..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 transition-all font-inter"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -188,7 +188,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Modal - Basic Info, Pricing & Stock */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -210,30 +210,38 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
               {/* Basic Info */}
               <section>
                 <h3 className="text-sm font-bold text-blue-600 uppercase tracking-widest mb-4">Informações Básicas</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Nome do Produto *</label>
-                    <input name="name" defaultValue={editingProduct?.name} required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400" />
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Nome do Produto *</label>
+                    <input 
+                      name="name" 
+                      defaultValue={editingProduct?.name} 
+                      required 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 transition-all font-inter" 
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Código Interno</label>
-                    <input name="code" defaultValue={editingProduct?.code} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400" />
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Código Interno</label>
+                    <input 
+                      name="code" 
+                      defaultValue={editingProduct?.code} 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 transition-all font-inter" 
+                    />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Código de Barras</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Código de Barras</label>
                     <div className="flex gap-2">
                       <input
                         name="barcode"
                         value={formData.barcode}
                         onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
-                        className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+                        className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
                         placeholder="Clique em Gerar ou digite..."
                       />
                       <button
                         type="button"
                         onClick={() => setIsScannerOpen(true)}
                         className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all flex items-center gap-2 border border-blue-200"
-                        title="Escanear com a câmera"
                       >
                         <Scan size={18} />
                         Escanear
@@ -241,15 +249,19 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       <button
                         type="button"
                         onClick={generateUniqueBarcode}
-                        className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
                       >
                         Gerar Único
                       </button>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Categoria</label>
-                    <select name="category" defaultValue={editingProduct?.category} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400">
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Categoria</label>
+                    <select 
+                      name="category" 
+                      defaultValue={editingProduct?.category} 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
+                    >
                       <option>Capinhas</option>
                       <option>Películas</option>
                       <option>Cabos</option>
@@ -264,8 +276,12 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Marca</label>
-                    <input name="brand" defaultValue={editingProduct?.brand} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400" placeholder="Ex: Nike, Samsung" />
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Marca</label>
+                    <input 
+                      name="brand" 
+                      defaultValue={editingProduct?.brand} 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter" 
+                    />
                   </div>
                 </div>
               </section>
@@ -274,14 +290,14 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-blue-600 uppercase tracking-widest">Preços e Estoque</h3>
-                  <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
-                    <span className="text-xs text-blue-600 font-bold mr-2">PREÇO DE VENDA:</span>
-                    <span className="text-lg font-black text-blue-700">{formatCurrency(salePricePreview)}</span>
+                  <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100 shadow-sm flex items-center gap-3">
+                    <span className="text-xs text-blue-600 font-bold uppercase tracking-wider">Preço de Venda:</span>
+                    <span className="text-xl font-black text-blue-700">{formatCurrency(salePricePreview)}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Preço de Custo (R$)</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Preço de Custo (R$)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -289,11 +305,11 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       value={formData.costPrice}
                       onChange={(e) => setFormData(prev => ({ ...prev, costPrice: Number(e.target.value) }))}
                       required
-                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Margem de Lucro (%)</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Margem (%)</label>
                     <input
                       type="number"
                       step="0.1"
@@ -301,34 +317,46 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       value={formData.margin}
                       onChange={(e) => setFormData(prev => ({ ...prev, margin: Number(e.target.value) }))}
                       required
-                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Estoque Atual</label>
-                    <input type="number" name="stock" defaultValue={editingProduct?.stock || 0} required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400" />
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Estoque Atual</label>
+                    <input 
+                      type="number" 
+                      name="stock" 
+                      defaultValue={editingProduct?.stock || 0} 
+                      required 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter" 
+                    />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Estoque Mínimo</label>
-                    <input type="number" name="minStock" defaultValue={editingProduct?.minStock || 0} required className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400" />
+                    <label className="block text-xs font-bold text-slate-500 mb-1.5">Mínimo</label>
+                    <input 
+                      type="number" 
+                      name="minStock" 
+                      defaultValue={editingProduct?.minStock || 0} 
+                      required 
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter" 
+                    />
                   </div>
                 </div>
               </section>
 
-              <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-8 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
                     setIsModalOpen(false);
                     setEditingProduct(null);
                   }}
-                  className="px-6 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
+                  className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md transition-all flex items-center gap-2"
+                  className="px-10 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition-all flex items-center gap-2"
                 >
                   <Check size={18} />
                   Salvar Produto
@@ -339,7 +367,26 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
         </div>
       )}
 
-
+      {/* Scanner Modal Placeholder */}
+      {isScannerOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col items-center p-8 text-center">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-6">
+              <Scan size={40} />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-2">Scanner Ativado</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+              O recurso de scanner está sendo integrado. Em breve você poderá usar a câmera para capturar códigos de barras automaticamente.
+            </p>
+            <button 
+              onClick={() => setIsScannerOpen(false)}
+              className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-sm"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
