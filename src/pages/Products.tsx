@@ -12,7 +12,9 @@ import {
   Image as ImageIcon,
   Check,
   X,
-  Scan
+  Scan,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { useERPData } from '../hooks/useERPData';
 import { formatCurrency, cn } from '../lib/utils';
@@ -23,6 +25,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
   const [formData, setFormData] = useState({
     barcode: '',
@@ -46,6 +49,16 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
     }
     setFormData(prev => ({ ...prev, barcode: newBarcode }));
   };
+  
+  const generateUniqueInternalCode = () => {
+    let newCode = '';
+    let isUnique = false;
+    while (!isUnique) {
+      newCode = Array.from({ length: 7 }, () => Math.floor(Math.random() * 10)).join('');
+      isUnique = !data.products.some(p => p.code === newCode);
+    }
+    return newCode;
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Tem certeza que deseja excluir o produto "${name}"?`)) {
@@ -63,10 +76,17 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
     const costPrice = Number(formData.costPrice);
     const margin = Number(formData.margin);
     const salePrice = costPrice * (1 + margin / 100);
+    
+    let code = fData.get('code') as string;
+    
+    // Auto-generate 7-digit internal code if empty for new product
+    if (!editingProduct && !code) {
+      code = generateUniqueInternalCode();
+    }
 
     const productData: Product = {
       id: editingProduct?.id || `P${Date.now()}`,
-      code: fData.get('code') as string,
+      code,
       barcode: formData.barcode || (fData.get('barcode') as string),
       name: fData.get('name') as string,
       description: fData.get('description') as string,
@@ -110,6 +130,34 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
             <Filter size={18} />
             Filtros
           </button>
+          
+          <div className="flex border border-slate-200 rounded-lg p-0.5 bg-slate-50 shadow-inner">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "p-1.5 rounded-md transition-all",
+                viewMode === 'grid' 
+                  ? "bg-white text-blue-600 shadow-sm border border-slate-100" 
+                  : "text-slate-400 hover:text-slate-600"
+              )}
+              title="Visualização em Grade"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={cn(
+                "p-1.5 rounded-md transition-all",
+                viewMode === 'table' 
+                  ? "bg-white text-blue-600 shadow-sm border border-slate-100" 
+                  : "text-slate-400 hover:text-slate-600"
+              )}
+              title="Visualização em Tabela"
+            >
+              <List size={18} />
+            </button>
+          </div>
+
           <button
             onClick={() => {
               setEditingProduct(null);
@@ -124,69 +172,155 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
-          <div key={product.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
-            <div className="aspect-video bg-slate-100 relative flex items-center justify-center overflow-hidden">
-              {product.image ? (
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              ) : (
-                <ImageIcon size={48} className="text-slate-300" />
-              )}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                <button
-                  onClick={() => {
-                    setEditingProduct(product);
-                    setFormData({
-                      barcode: product.barcode || '',
-                      costPrice: product.costPrice || 0,
-                      margin: product.margin || 0
-                    });
-                    setIsModalOpen(true);
-                  }}
-                  className="p-2 bg-white/90 backdrop-blur rounded-lg shadow-sm text-blue-600 hover:bg-blue-600 hover:text-white transition-all"
-                >
-                  <Edit2 size={16} />
-                </button>
-                <button
-                  onClick={() => handleDelete(product.id, product.name)}
-                  className="p-2 bg-white/90 backdrop-blur rounded-lg shadow-sm text-red-600 hover:bg-red-600 hover:text-white transition-all"
-                >
-                  <Trash2 size={16} />
-                </button>
+      {/* Products Content */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map(product => (
+            <div key={product.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-all">
+              <div className="aspect-video bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <ImageIcon size={48} className="text-slate-300" />
+                )}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <button
+                    onClick={() => {
+                      setEditingProduct(product);
+                      setFormData({
+                        barcode: product.barcode || '',
+                        costPrice: product.costPrice || 0,
+                        margin: product.margin || 0
+                      });
+                      setIsModalOpen(true);
+                    }}
+                    className="p-2 bg-white/90 backdrop-blur rounded-lg shadow-sm text-blue-600 hover:bg-blue-600 hover:text-white transition-all"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product.id, product.name)}
+                    className="p-2 bg-white/90 backdrop-blur rounded-lg shadow-sm text-red-600 hover:bg-red-600 hover:text-white transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <div className="absolute bottom-2 left-2">
+                  <span className={cn(
+                    "px-2 py-1 rounded text-[10px] font-bold uppercase",
+                    product.stock <= product.minStock ? "bg-red-500 text-white" : "bg-blue-600 text-white"
+                  )}>
+                    Estoque: {product.stock} {product.unit}
+                  </span>
+                </div>
               </div>
-              <div className="absolute bottom-2 left-2">
-                <span className={cn(
-                  "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                  product.stock <= product.minStock ? "bg-red-500 text-white" : "bg-blue-600 text-white"
-                )}>
-                  Estoque: {product.stock} {product.unit}
-                </span>
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{product.category}</p>
+                    <h3 className="font-bold text-slate-800 line-clamp-1">{product.name}</h3>
+                  </div>
+                  <p className="text-lg font-black text-blue-600">{formatCurrency(product.salePrice)}</p>
+                </div>
+                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <Tag size={14} />
+                    <span>{product.code || 'S/ Código'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <Layers size={14} />
+                    <span>{product.brand || 'S/ Marca'}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{product.category}</p>
-                  <h3 className="font-bold text-slate-800 line-clamp-1">{product.name}</h3>
-                </div>
-                <p className="text-lg font-black text-blue-600">{formatCurrency(product.salePrice)}</p>
-              </div>
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50">
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <Tag size={14} />
-                  <span>{product.code || 'S/ Código'}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <Layers size={14} />
-                  <span>{product.brand || 'S/ Marca'}</span>
-                </div>
-              </div>
-            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-24">Item</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Produto</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Categoria</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Preço</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Estoque</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredProducts.map(product => (
+                  <tr key={product.id} className="hover:bg-blue-50/20 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 shadow-sm">
+                        {product.image ? (
+                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon size={20} className="text-slate-300" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-800 text-sm">{product.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Tag size={10} /> {product.code || 'S/ Código'}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded-md text-[10px] font-black uppercase tracking-wider">
+                        {product.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <p className="font-black text-blue-600 text-base">{formatCurrency(product.salePrice)}</p>
+                      <p className="text-[10px] font-bold text-slate-400 italic">Margem: {product.margin}%</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col items-center">
+                        <span className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm",
+                          product.stock <= product.minStock ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                        )}>
+                          {product.stock} {product.unit}
+                        </span>
+                        {product.stock <= product.minStock && (
+                          <span className="text-[8px] font-bold text-red-500 mt-1 uppercase animate-pulse">Estoque Baixo</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingProduct(product);
+                            setFormData({
+                              barcode: product.barcode || '',
+                              costPrice: product.costPrice || 0,
+                              margin: product.margin || 0
+                            });
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all shadow-sm"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id, product.name)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all shadow-sm"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Modal - Basic Info, Pricing & Stock */}
       {isModalOpen && (

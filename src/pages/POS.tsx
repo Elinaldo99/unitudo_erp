@@ -13,7 +13,10 @@ import {
   User as UserIcon, 
   Calculator, 
   Package,
-  Loader2
+  Loader2,
+  Tag,
+  List,
+  LayoutGrid
 } from 'lucide-react';
 import { useERPData } from '../hooks/useERPData';
 import { formatCurrency, cn } from '../lib/utils';
@@ -30,6 +33,7 @@ export default function POS({ data }: { data: ReturnType<typeof useERPData> }) {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [receivedAmount, setReceivedAmount] = useState<string>('');
   const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
     if (!data.isLoading && (!data.cashSession || data.cashSession.status === 'closed')) {
@@ -150,29 +154,87 @@ export default function POS({ data }: { data: ReturnType<typeof useERPData> }) {
           <button className="p-2.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all">
             <Calculator size={20} />
           </button>
+          
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            <button 
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "p-2 rounded-md transition-all",
+                viewMode === 'grid' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button 
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "p-2 rounded-md transition-all",
+                viewMode === 'list' ? "bg-white text-blue-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <List size={18} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 pr-2">
+        <div className={cn(
+          "flex-1 overflow-y-auto pr-2",
+          viewMode === 'grid' ? "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-2"
+        )}>
           {filteredProducts.map(product => (
             <button 
               key={product.id}
               onClick={() => addToCart(product)}
-              className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all text-left group flex flex-col h-full"
+              className={cn(
+                "bg-white border shadow-sm transition-all text-left group",
+                viewMode === 'grid' 
+                  ? "p-4 rounded-xl border-slate-200 hover:border-blue-400 hover:shadow-md flex flex-col h-full"
+                  : "p-3 rounded-xl border-slate-200 hover:border-blue-400 hover:shadow-md flex items-center gap-4"
+              )}
             >
-              <div className="aspect-square bg-slate-50 rounded-lg mb-3 flex items-center justify-center text-slate-300 group-hover:text-blue-200 transition-colors">
-                <Package size={40} />
+              <div className={cn(
+                "bg-slate-50 flex-shrink-0 flex items-center justify-center text-slate-300 transition-colors border border-slate-100 overflow-hidden",
+                viewMode === 'grid' ? "aspect-square rounded-lg mb-3 w-full" : "w-14 h-14 rounded-lg"
+              )}>
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Package size={viewMode === 'grid' ? 32 : 24} />
+                )}
               </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">{product.category}</p>
-              <h4 className="font-bold text-slate-800 text-sm line-clamp-2 flex-1">{product.name}</h4>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-blue-600 font-black">{formatCurrency(product.salePrice)}</span>
+              
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{product.category}</p>
+                <h4 className={cn(
+                  "font-bold text-slate-800 text-sm",
+                  viewMode === 'grid' ? "line-clamp-2" : "truncate"
+                )}>{product.name}</h4>
+                {viewMode === 'list' && (
+                  <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1 font-bold">
+                    <Tag size={10} className="text-amber-400" />
+                    {product.code || 'S/ Código'}
+                  </p>
+                )}
+              </div>
+
+              <div className={cn(
+                "flex flex-col gap-1.5",
+                viewMode === 'grid' ? "mt-3 flex-row items-center justify-between" : "items-end ml-auto"
+              )}>
+                <span className="text-blue-600 font-black text-base">{formatCurrency(product.salePrice)}</span>
                 <span className={cn(
-                  "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                  product.stock <= product.minStock ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-500"
+                  "text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter",
+                  product.stock <= product.minStock ? "bg-red-500 text-white shadow-sm" : "bg-slate-100 text-slate-500"
                 )}>
-                  Qtd: {product.stock}
+                  {viewMode === 'grid' ? 'Qtd: ' : 'Estoque: '}{product.stock}
                 </span>
               </div>
+              
+              {viewMode === 'list' && (
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform scale-75 group-hover:scale-100">
+                  <Plus size={18} />
+                </div>
+              )}
             </button>
           ))}
         </div>
