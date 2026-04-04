@@ -4,11 +4,19 @@
    AUTH SCREEN — Dashboard color palette (white / slate / blue-600)
    ============================================================ */
 
+/* --- Global Font --- */
+:root {
+  font-family: 'Outfit', 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  font-family: 'Outfit', 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
 /* --- Page layout: split screen --- */
 .auth-page {
   min-height: 100vh;
   display: flex;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
 /* ---- LEFT PANEL ---- */
