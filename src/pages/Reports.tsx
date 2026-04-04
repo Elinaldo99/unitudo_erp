@@ -28,7 +28,8 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Download,
-  FileText
+  FileText,
+  CheckCircle2
 } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 import { useERPData } from '../hooks/useERPData';
@@ -117,7 +118,19 @@ export default function Reports({ data }: { data: ReturnType<typeof useERPData> 
       categoryData,
       topProducts,
       cashFlowData,
-      customerRanking
+      customerRanking,
+      stockPosition: data.products
+        .map(p => ({ name: p.name, value: p.stock * p.costPrice, quantity: p.stock }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10),
+      lowStockProducts: data.products
+        .filter(p => p.stock <= p.minStock)
+        .map(p => ({ 
+          name: p.name, 
+          stock: p.stock, 
+          min: p.minStock,
+          deficit: Math.max(0, p.minStock - p.stock)
+        }))
     };
   }, [data.sales, data.products, data.transactions, data.customers]);
 
@@ -371,6 +384,98 @@ export default function Reports({ data }: { data: ReturnType<typeof useERPData> 
                  </div>
                ))}
              </div>
+          </div>
+        );
+
+      case 'Posição de Estoque Atual':
+        return (
+          <div className="space-y-6">
+            <div className="h-[350px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={reportsData.stockPosition} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    width={150} 
+                    fontSize={10} 
+                    fontWeight="bold" 
+                    tick={{ fill: '#64748b' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value: any) => [formatCurrency(Number(value)), 'Valor em Estoque']}
+                  />
+                  <Bar dataKey="value" fill="#f59e0b" radius={[0, 8, 8, 0]} barSize={32} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="overflow-hidden border border-slate-100 rounded-2xl">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <th className="px-4 py-3">Produto</th>
+                    <th className="px-4 py-3 text-center">Quantidade</th>
+                    <th className="px-4 py-3 text-right">Valor Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {reportsData.stockPosition.map((p, i) => (
+                    <tr key={i} className="text-sm">
+                      <td className="px-4 py-3 font-bold text-slate-700">{p.name}</td>
+                      <td className="px-4 py-3 text-center text-slate-500 font-medium">{p.quantity} un</td>
+                      <td className="px-4 py-3 text-right font-black text-amber-600">{formatCurrency(p.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+
+      case 'Produtos Abaixo do Mínimo':
+        return (
+          <div className="space-y-6">
+            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
+              <div>
+                <h4 className="text-amber-800 font-black text-lg">Alerta de Reposição</h4>
+                <p className="text-amber-600 text-sm font-medium">{reportsData.lowStockProducts.length} itens precisam de atenção imediata.</p>
+              </div>
+              <div className="p-4 bg-white/50 rounded-2xl">
+                 <Package className="text-amber-600" />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {reportsData.lowStockProducts.length > 0 ? (
+                reportsData.lowStockProducts.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 bg-white border border-red-100 rounded-2xl hover:shadow-md transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
+                        <ArrowDownRight size={20} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{p.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Mínimo sugerido: {p.min} un</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-red-600">Estoque: {p.stock} un</p>
+                      <p className="text-[10px] text-slate-400 font-bold">Faltam {p.deficit} un</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-12 text-center bg-emerald-50 rounded-3xl border border-emerald-100">
+                  <CheckCircle2 className="mx-auto text-emerald-500 mb-2" size={32} />
+                  <p className="text-emerald-700 font-black">Tudo em ordem!</p>
+                  <p className="text-emerald-600 text-sm font-medium">Todos os produtos estão com estoque acima do mínimo.</p>
+                </div>
+              )}
+            </div>
           </div>
         );
 
