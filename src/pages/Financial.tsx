@@ -33,6 +33,7 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
     category: '',
     description: '',
     value: '',
+    date: new Date().toISOString().split('T')[0],
     status: 'paid' as 'paid' | 'pending'
   });
 
@@ -56,12 +57,13 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
     setSelectedDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   };
 
-  const resetForm = () => {
+  const resetForm = (date?: Date) => {
     setFormData({
       type: 'income',
       category: '',
       description: '',
       value: '',
+      date: (date || new Date()).toISOString().split('T')[0],
       status: 'paid'
     });
     setEditingTransaction(null);
@@ -101,6 +103,7 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
       category: t.category,
       description: t.description,
       value: t.value.toString(),
+      date: new Date(t.date).toISOString().split('T')[0],
       status: t.status
     });
     setIsModalOpen(true);
@@ -341,6 +344,13 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
                 return (
                   <div 
                     key={idx} 
+                    onClick={() => {
+                      if (day) {
+                        const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
+                        resetForm(date);
+                        setIsModalOpen(true);
+                      }
+                    }}
                     className={cn(
                       "min-h-[120px] bg-white p-3 transition-all",
                       day ? "group hover:bg-slate-50 cursor-pointer" : "bg-slate-50/50"
@@ -350,8 +360,8 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
                       <>
                         <div className="flex items-center justify-between mb-2">
                           <span className={cn(
-                            "text-sm font-bold rounded-full w-7 h-7 flex items-center justify-center",
-                            hasTransactions ? "bg-blue-50 text-blue-600" : "text-slate-400"
+                            "text-sm font-bold rounded-full w-7 h-7 flex items-center justify-center transition-all",
+                            hasTransactions ? "bg-blue-600 text-white shadow-md shadow-blue-100" : "text-slate-400 group-hover:bg-slate-100"
                           )}>
                             {day}
                           </span>
@@ -361,14 +371,14 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
                             </span>
                           )}
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 pt-1">
                           {dayIncome > 0 && (
-                            <div className="flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            <div className="flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
                               <Plus size={8} /> {formatCurrency(dayIncome)}
                             </div>
                           )}
                           {dayExpense > 0 && (
-                            <div className="flex items-center gap-1 text-[10px] font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                            <div className="flex items-center gap-1 text-[10px] font-black text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
                               <X size={8} /> {formatCurrency(dayExpense)}
                             </div>
                           )}
@@ -419,16 +429,31 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
                 </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Descrição</label>
-                <input
-                  required
-                  type="text"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ex: Aluguel, Venda de Produto..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Data</label>
+                  <div className="relative">
+                    <CalendarIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      required
+                      type="date"
+                      value={formData.date}
+                      onChange={e => setFormData({ ...formData, date: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Descrição</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.description}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Ex: Aluguel, Venda..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

@@ -254,13 +254,13 @@ export function useERPData(session?: Session | null) {
     fetchData();
   }, [session]);
 
-  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'date'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     if (!session?.user) return;
     try {
       const { error } = await supabase.from('transactions').insert({
         ...transaction,
         user_id: session.user.id,
-        date: new Date().toISOString()
+        date: transaction.date || new Date().toISOString()
       });
       if (error) throw error;
       fetchData();
