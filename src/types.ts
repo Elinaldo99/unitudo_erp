@@ -47,9 +47,8 @@ export interface Customer {
   id: string;
   name: string;
   document: string;
-  phone: string;
-  email: string;
   phone?: string;
+  email: string;
   address: string;
   creditLimit: number;
   points: number;
@@ -146,5 +145,11 @@ export interface InventoryReason {
   id: string;
   name: string;
   type: 'entry' | 'exit' | 'both';
+  userId: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
   userId: string;
 }

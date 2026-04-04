@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { Product, Sale, Customer, Supplier, Transaction, CashSession, UserProfile, InventoryMovement, InventoryReason } from '../types';
+import { Product, Sale, Customer, Supplier, Transaction, CashSession, UserProfile, InventoryMovement, InventoryReason, ProductCategory } from '../types';
 
 export function useERPData(session?: Session | null) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,6 +13,7 @@ export function useERPData(session?: Session | null) {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [inventoryMovements, setInventoryMovements] = useState<InventoryMovement[]>([]);
   const [inventoryReasons, setInventoryReasons] = useState<InventoryReason[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isInitializing, setIsInitializing] = useState(true);
@@ -56,6 +57,7 @@ export function useERPData(session?: Session | null) {
       
       const { data: invMoveData } = await supabase.from('inventory_movements').select('*').order('created_at', { ascending: false });
       const { data: reasonsData } = await supabase.from('inventory_reasons').select('*').order('name');
+      const { data: categoriesData } = await supabase.from('product_categories').select('*').order('name');
 
       if (prodData) {
         setProducts(prodData.map(p => ({
@@ -150,6 +152,14 @@ export function useERPData(session?: Session | null) {
           name: r.name,
           type: r.type,
           userId: r.user_id
+        })));
+      }
+
+      if (categoriesData) {
+        setProductCategories(categoriesData.map(c => ({
+          id: c.id,
+          name: c.name,
+          userId: c.user_id
         })));
       }
       if (salesData) {
@@ -593,11 +603,43 @@ export function useERPData(session?: Session | null) {
     return data;
   };
 
+  const saveProductCategory = async (name: string, id?: string): Promise<ProductCategory | null> => {
+    if (!session?.user) return null;
+    if (id) {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .update({ name })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      fetchData();
+      return data ? { id: data.id, name: data.name, userId: data.user_id } : null;
+    } else {
+      const { data, error } = await supabase
+        .from('product_categories')
+        .insert({ name, user_id: session.user.id })
+        .select()
+        .single();
+      if (error) throw error;
+      fetchData();
+      return data ? { id: data.id, name: data.name, userId: data.user_id } : null;
+    }
+  };
+
+  const deleteProductCategory = async (id: string) => {
+    if (!session?.user) return;
+    const { error } = await supabase.from('product_categories').delete().eq('id', id);
+    if (error) throw error;
+    fetchData();
+  };
+
   return {
     products, saveProduct, deleteProduct, updateProductStock, 
     suppliers, saveSupplier, deleteSupplier,
     inventoryMovements, addInventoryMovement, 
     inventoryReasons, addInventoryReason,
+    productCategories, saveProductCategory, deleteProductCategory,
     sales, addSale, updateSaleStatus, deleteSale,
     customers, saveCustomer,
     transactions, addTransaction, updateTransaction, deleteTransaction,

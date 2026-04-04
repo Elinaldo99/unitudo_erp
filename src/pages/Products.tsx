@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   Search,
   Filter,
-  MoreVertical,
   Edit2,
   Trash2,
-  Package,
   Tag,
   Layers,
   Image as ImageIcon,
@@ -14,7 +12,10 @@ import {
   X,
   Scan,
   LayoutGrid,
-  List
+  List,
+  ChevronDown,
+  Pencil,
+  FolderPlus
 } from 'lucide-react';
 import { useERPData } from '../hooks/useERPData';
 import { formatCurrency, cn } from '../lib/utils';
@@ -31,14 +32,44 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
     barcode: '',
     costPrice: 0,
     margin: 0,
-    salePrice: 0
+    salePrice: 0,
+    category: ''
   });
+
+  // --- category management state ---
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const categoryRef = useRef<HTMLDivElement>(null);
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setCategoryDropdownOpen(false);
+        setIsAddingCategory(false);
+        setNewCategoryName('');
+        setEditingCategoryId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const filteredProducts = data.products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.barcode.includes(searchTerm)
   );
+
+  // Merged category list: DB categories + categories already used by products (no duplicates)
+  const dbCategoryNames = new Set(data.productCategories.map(c => c.name));
+  const productOnlyCategories: string[] = Array.from<string>(
+    new Set<string>(data.products.map(p => p.category as string).filter(c => !!c))
+  ).filter(name => !dbCategoryNames.has(name));
+
 
   const generateUniqueBarcode = () => {
     let newBarcode = '';
@@ -128,6 +159,39 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
     setFormData(prev => ({ ...prev, salePrice: value, margin: Math.round(newMargin * 100) / 100 }));
   };
 
+  // --- category helpers ---
+  const handleCreateCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    try {
+      const created = await data.saveProductCategory(trimmed);
+      if (created) setFormData(prev => ({ ...prev, category: created.name }));
+      setNewCategoryName('');
+      setIsAddingCategory(false);
+      setCategoryDropdownOpen(false);
+    } catch { alert('Erro ao criar categoria'); }
+  };
+
+  const handleUpdateCategory = async (id: string) => {
+    const trimmed = editingCategoryName.trim();
+    if (!trimmed) return;
+    try {
+      await data.saveProductCategory(trimmed, id);
+      if (formData.category === data.productCategories.find(c => c.id === id)?.name) {
+        setFormData(prev => ({ ...prev, category: trimmed }));
+      }
+      setEditingCategoryId(null);
+    } catch { alert('Erro ao atualizar categoria'); }
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (!window.confirm(`Excluir a categoria "${name}"?`)) return;
+    try {
+      await data.deleteProductCategory(id);
+      if (formData.category === name) setFormData(prev => ({ ...prev, category: '' }));
+    } catch { alert('Erro ao excluir categoria'); }
+  };
+
   return (
     <div className="space-y-6">
       {/* Actions Bar */}
@@ -178,7 +242,7 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
           <button
             onClick={() => {
               setEditingProduct(null);
-              setFormData({ barcode: '', costPrice: 0, margin: 0, salePrice: 0 });
+              setFormData({ barcode: '', costPrice: 0, margin: 0, salePrice: 0, category: '' });
               setIsModalOpen(true);
             }}
             className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm transition-all"
@@ -208,7 +272,8 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                         barcode: product.barcode || '',
                         costPrice: product.costPrice || 0,
                         margin: product.margin || 0,
-                        salePrice: product.salePrice || 0
+                        salePrice: product.salePrice || 0,
+                        category: product.category || ''
                       });
                       setIsModalOpen(true);
                     }}
@@ -317,7 +382,8 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                               barcode: product.barcode || '',
                               costPrice: product.costPrice || 0,
                               margin: product.margin || 0,
-                              salePrice: product.salePrice || 0
+                              salePrice: product.salePrice || 0,
+                              category: product.category || ''
                             });
                             setIsModalOpen(true);
                           }}
@@ -408,25 +474,151 @@ export default function Products({ data }: { data: ReturnType<typeof useERPData>
                       </button>
                     </div>
                   </div>
-                  <div>
+                  <div className="relative" ref={categoryRef}>
                     <label className="block text-xs font-bold text-slate-500 mb-1.5">Categoria</label>
-                    <select 
-                      name="category" 
-                      defaultValue={editingProduct?.category} 
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter"
+                    {/* hidden input to carry value in FormData */}
+                    <input type="hidden" name="category" value={formData.category} />
+                    <button
+                      type="button"
+                      onClick={() => setCategoryDropdownOpen(o => !o)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 font-inter flex items-center justify-between text-sm"
                     >
-                      <option>Capinhas</option>
-                      <option>Películas</option>
-                      <option>Cabos</option>
-                      <option>Carregadores</option>
-                      <option>Fones</option>
-                      <option>Caixinhas de Som</option>
-                      <option>Suportes</option>
-                      <option>Segurança</option>
-                      <option>Hardware</option>
-                      <option>Acessórios</option>
-                      <option>Outros</option>
-                    </select>
+                      <span className={formData.category ? 'text-slate-800' : 'text-slate-400'}>
+                        {formData.category || 'Selecionar categoria...'}
+                      </span>
+                      <ChevronDown size={16} className="text-slate-400" />
+                    </button>
+
+                    {categoryDropdownOpen && (
+                      <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                        <div className="max-h-56 overflow-y-auto">
+
+                          {/* DB categories (editable) */}
+                          {data.productCategories.length > 0 && (
+                            <div className="px-3 pt-2 pb-1">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Minhas Categorias</span>
+                            </div>
+                          )}
+                          {data.productCategories.map(cat => (
+                            <div
+                              key={cat.id}
+                              className={cn(
+                                'flex items-center justify-between px-3 py-2 hover:bg-blue-50 group transition-colors',
+                                formData.category === cat.name && 'bg-blue-50'
+                              )}
+                            >
+                              {editingCategoryId === cat.id ? (
+                                <div className="flex items-center gap-1 flex-1">
+                                  <input
+                                    autoFocus
+                                    value={editingCategoryName}
+                                    onChange={e => setEditingCategoryName(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') handleUpdateCategory(cat.id); if (e.key === 'Escape') setEditingCategoryId(null); }}
+                                    className="flex-1 px-2 py-1 text-sm border border-blue-300 rounded-md outline-none"
+                                  />
+                                  <button type="button" onClick={() => handleUpdateCategory(cat.id)} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                                    <Check size={14} />
+                                  </button>
+                                  <button type="button" onClick={() => setEditingCategoryId(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="flex-1 text-left text-sm text-slate-700 font-medium"
+                                    onClick={() => { setFormData(prev => ({ ...prev, category: cat.name })); setCategoryDropdownOpen(false); }}
+                                  >
+                                    {cat.name}
+                                  </button>
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      type="button"
+                                      onClick={() => { setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}
+                                      className="p-1 text-blue-500 hover:bg-blue-100 rounded"
+                                      title="Renomear"
+                                    >
+                                      <Pencil size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                      className="p-1 text-red-400 hover:bg-red-50 rounded"
+                                      title="Excluir"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* Categories from existing products (read-only) */}
+                          {productOnlyCategories.length > 0 && (
+                            <>
+                              <div className="px-3 pt-2 pb-1 border-t border-slate-50">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Herdadas dos Produtos</span>
+                              </div>
+                              {productOnlyCategories.map(name => (
+                                <div
+                                  key={name}
+                                  className={cn(
+                                    'flex items-center justify-between px-3 py-2 hover:bg-blue-50 transition-colors',
+                                    formData.category === name && 'bg-blue-50'
+                                  )}
+                                >
+                                  <button
+                                    type="button"
+                                    className="flex-1 text-left text-sm text-slate-700 font-medium"
+                                    onClick={() => { setFormData(prev => ({ ...prev, category: name })); setCategoryDropdownOpen(false); }}
+                                  >
+                                    {name}
+                                  </button>
+                                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Existente</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+
+                          {data.productCategories.length === 0 && productOnlyCategories.length === 0 && (
+                            <p className="text-xs text-slate-400 text-center py-3">Nenhuma categoria. Crie uma abaixo.</p>
+                          )}
+                        </div>
+
+                        {/* add new category */}
+                        <div className="border-t border-slate-100 p-2">
+                          {isAddingCategory ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                autoFocus
+                                value={newCategoryName}
+                                onChange={e => setNewCategoryName(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleCreateCategory(); if (e.key === 'Escape') { setIsAddingCategory(false); setNewCategoryName(''); } }}
+                                placeholder="Nome da categoria..."
+                                className="flex-1 px-2 py-1.5 text-sm border border-blue-300 rounded-md outline-none focus:border-blue-500"
+                              />
+                              <button type="button" onClick={handleCreateCategory} className="p-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                <Check size={14} />
+                              </button>
+                              <button type="button" onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-md">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingCategory(true)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-blue-600 font-bold hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <FolderPlus size={15} />
+                              Nova Categoria
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-1.5">Marca</label>
