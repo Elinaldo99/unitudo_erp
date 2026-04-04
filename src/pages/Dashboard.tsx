@@ -81,7 +81,7 @@ export default function Dashboard({ data }: { data: ReturnType<typeof useERPData
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard 
           title="Faturamento (Dia)" 
           value={formatCurrency(totalRevenue)} 
@@ -123,7 +123,7 @@ export default function Dashboard({ data }: { data: ReturnType<typeof useERPData
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-bold text-slate-800">Desempenho por Hora ({new Date(selectedDate + "T12:00:00").toLocaleDateString('pt-BR')})</h3>
           </div>
-          <div className="h-80 w-full">
+          <div className="h-52 md:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -183,8 +183,8 @@ export default function Dashboard({ data }: { data: ReturnType<typeof useERPData
             <h3 className="font-bold text-slate-800">Vendas Recentes</h3>
             <button className="text-xs font-semibold text-blue-600 hover:underline">Ver todas</button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto -mx-0">
+            <table className="w-full text-left min-w-[540px]">
               <thead>
                 <tr className="bg-slate-50 text-[10px] uppercase tracking-wider font-bold text-slate-400">
                   <th className="px-6 py-3">ID</th>

@@ -294,6 +294,35 @@ export function useERPData(session?: Session | null) {
     }
   };
 
+  const updateSaleStatus = async (id: string, status: 'completed' | 'cancelled') => {
+    if (!session?.user) return;
+    try {
+      const { error } = await supabase.from('sales').update({ status }).eq('id', id);
+      if (error) throw error;
+      
+      // If cancelling, and there's an associated transaction, we might want to handle it
+      // For now, just refresh data
+      fetchData();
+    } catch (error) {
+      console.error('Error updating sale status:', error);
+      throw error;
+    }
+  };
+
+  const deleteSale = async (id: string) => {
+    if (!session?.user) return;
+    try {
+      // sale_items will be deleted by ON DELETE CASCADE if configured, or manually
+      await supabase.from('sale_items').delete().eq('sale_id', id);
+      const { error } = await supabase.from('sales').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting sale:', error);
+      throw error;
+    }
+  };
+
   const addSale = async (sale: Omit<Sale, 'id' | 'date'>) => {
     if (!session?.user) return;
 
@@ -569,7 +598,7 @@ export function useERPData(session?: Session | null) {
     suppliers, saveSupplier, deleteSupplier,
     inventoryMovements, addInventoryMovement, 
     inventoryReasons, addInventoryReason,
-    sales, addSale,
+    sales, addSale, updateSaleStatus, deleteSale,
     customers, saveCustomer,
     transactions, addTransaction, updateTransaction, deleteTransaction,
     cashSession, openCash, closeCash,

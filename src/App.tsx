@@ -64,7 +64,20 @@ const categories = ['Administrativo', 'Cadastros', 'Comercial', 'Estoque', 'Fina
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined); // undefined = loading
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) setIsSidebarOpen(false);
+      else setIsSidebarOpen(true);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const erpData = useERPData(session);
 
   // Filter tabs based on user permissions
@@ -170,7 +183,7 @@ export default function App() {
         )}
 
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-30 shadow-sm">
+        <header className="h-14 md:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-4 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -179,8 +192,8 @@ export default function App() {
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">U</div>
-              <span className="font-bold text-xl tracking-tight text-blue-900">UniTudo <span className="text-slate-400 font-normal">ERP</span></span>
+              <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">U</div>
+              <span className="font-bold text-base md:text-xl tracking-tight text-blue-900">UniTudo <span className="text-slate-400 font-normal">ERP</span></span>
             </div>
           </div>
 
@@ -210,14 +223,30 @@ export default function App() {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar Overlay */}
+          <AnimatePresence>
+            {isSidebarOpen && isMobile && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsSidebarOpen(false)}
+                className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"
+              />
+            )}
+          </AnimatePresence>
+
           {/* Sidebar */}
           <AnimatePresence mode="wait">
             {isSidebarOpen && (
               <motion.aside
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 260, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                className="bg-white border-r border-slate-200 flex flex-col h-[calc(100vh-64px)] overflow-y-auto"
+                initial={{ x: isMobile ? -260 : 0, width: isMobile ? 260 : 0, opacity: 0 }}
+                animate={{ x: 0, width: 260, opacity: 1 }}
+                exit={{ x: isMobile ? -260 : 0, width: 0, opacity: 0 }}
+                className={cn(
+                  "bg-white border-r border-slate-200 flex flex-col overflow-y-auto z-50",
+                  isMobile ? "fixed inset-y-0 left-0 top-16 shadow-2xl" : "relative h-[calc(100vh-64px)]"
+                )}
               >
                 <nav className="p-4 space-y-6">
                   {categories.map(category => {
@@ -234,7 +263,10 @@ export default function App() {
                           return (
                             <button
                               key={tab.id}
-                              onClick={() => setActiveTab(tab.id)}
+                              onClick={() => {
+                                setActiveTab(tab.id);
+                                if (isMobile) setIsSidebarOpen(false);
+                              }}
                               className={cn(
                                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                                 activeTab === tab.id
@@ -274,27 +306,27 @@ export default function App() {
           </AnimatePresence>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <main className="flex-1 overflow-y-auto p-3 md:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
-              <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <header className="mb-4 md:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
-                    <span>UniTudo ERP</span>
-                    <span>/</span>
+                    <span className="hidden sm:inline">UniTudo ERP</span>
+                    <span className="hidden sm:inline">/</span>
                     <span className="text-blue-600">{activeCategory}</span>
                   </div>
-                  <h1 className="text-2xl font-bold text-slate-900">
+                  <h1 className="text-xl md:text-2xl font-bold text-slate-900">
                     {tabs.find(t => t.id === activeTab)?.label}
                   </h1>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3">
+                  <div className="bg-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2 md:gap-3">
                     <div className={cn(
-                      "w-2.5 h-2.5 rounded-full animate-pulse",
+                      "w-2 h-2 md:w-2.5 md:h-2.5 rounded-full animate-pulse",
                       erpData.cashSession?.status === 'open' ? "bg-green-500" : "bg-red-500"
                     )}></div>
-                    <span className="text-sm font-medium text-slate-700">
+                    <span className="text-xs md:text-sm font-medium text-slate-700">
                       Caixa: {erpData.cashSession?.status === 'open' ? "Aberto" : "Fechado"}
                     </span>
                   </div>

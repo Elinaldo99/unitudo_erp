@@ -126,6 +126,8 @@ export default function POS({ data }: { data: ReturnType<typeof useERPData> }) {
     setSelectedCustomerId(null);
   };
 
+  const [mobileTab, setMobileTab] = useState<'products' | 'cart'>('products');
+
   if (data.isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -134,12 +136,45 @@ export default function POS({ data }: { data: ReturnType<typeof useERPData> }) {
     );
   }
 
-  if (false) { return null; }
-
   return (
-    <div className="h-[calc(100vh-200px)] flex flex-col lg:flex-row gap-6">
-      {/* Left: Product Selection */}
-      <div className="flex-1 flex flex-col gap-4 min-h-0">
+    <div className="h-[calc(100vh-140px)] flex flex-col gap-4 relative">
+      {/* Mobile Tab Switcher */}
+      <div className="flex lg:hidden bg-slate-200 p-1 rounded-xl mb-2">
+        <button 
+          onClick={() => setMobileTab('products')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all",
+            mobileTab === 'products' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
+          )}
+        >
+          <Package size={18} />
+          Produtos
+        </button>
+        <button 
+          onClick={() => setMobileTab('cart')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all",
+            mobileTab === 'cart' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"
+          )}
+        >
+          <div className="relative">
+            <ShoppingCart size={18} />
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center border border-white">
+                {cart.length}
+              </span>
+            )}
+          </div>
+          Carrinho
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
+        {/* Left: Product Selection */}
+        <div className={cn(
+          "flex-1 flex flex-col gap-4 min-h-0",
+          mobileTab !== 'products' && "hidden lg:flex"
+        )}>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -241,7 +276,10 @@ export default function POS({ data }: { data: ReturnType<typeof useERPData> }) {
       </div>
 
       {/* Right: Cart & Checkout */}
-      <div className="w-full lg:w-96 flex flex-col gap-4 min-h-0">
+      <div className={cn(
+        "w-full lg:w-96 flex flex-col gap-4 min-h-0",
+        mobileTab !== 'cart' && "hidden lg:flex"
+      )}>
         <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2">
@@ -518,6 +556,7 @@ export default function POS({ data }: { data: ReturnType<typeof useERPData> }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

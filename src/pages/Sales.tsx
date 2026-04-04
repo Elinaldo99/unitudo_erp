@@ -9,18 +9,17 @@ import {
   Filter,
   X,
   Package,
-  ArrowRight
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 import { useERPData } from '../hooks/useERPData';
 import { formatCurrency, formatDate, cn } from '../lib/utils';
 import { Sale } from '../types';
-import { Trash2, AlertCircle } from 'lucide-react';
 
 export default function Sales({ data }: { data: ReturnType<typeof useERPData> }) {
-    const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   
-  // Default to today's date in local YYYY-MM-DD
   const getTodayFormatted = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -34,17 +33,14 @@ export default function Sales({ data }: { data: ReturnType<typeof useERPData> })
 
   const filteredSales = useMemo(() => {
     return data.sales.filter(s => {
-      // Search
       const matchesSearch = s.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             s.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Date
       let matchesDate = false;
       if (!dateFilter) {
         matchesDate = true;
       } else {
         try {
-          // Adjust timezone offset to match local day intuitively
           const saleDate = new Date(s.date);
           const year = saleDate.getFullYear();
           const month = String(saleDate.getMonth() + 1).padStart(2, '0');
@@ -56,16 +52,14 @@ export default function Sales({ data }: { data: ReturnType<typeof useERPData> })
         }
       }
 
-      // Status
       const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-
       return matchesSearch && matchesDate && matchesStatus;
     });
   }, [data.sales, searchTerm, dateFilter, statusFilter]);
 
   const handleExport = () => {
     if (filteredSales.length === 0) {
-      alert('N�o h� dados para exportar.');
+      alert('Não há dados para exportar.');
       return;
     }
 
@@ -151,7 +145,7 @@ export default function Sales({ data }: { data: ReturnType<typeof useERPData> })
   return (
     <div className="space-y-6">
       {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
@@ -222,74 +216,76 @@ export default function Sales({ data }: { data: ReturnType<typeof useERPData> })
             <p className="text-slate-500">Comece a vender no PDV para ver o histórico aqui.</p>
           </div>
         ) : (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 text-[10px] uppercase tracking-wider font-bold text-slate-400">
-                <th className="px-6 py-4">Venda</th>
-                <th className="px-6 py-4">Data/Hora</th>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Pagamento</th>
-                <th className="px-6 py-4">Total</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredSales.map(sale => (
-                <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-bold text-slate-800 line-clamp-1 max-w-[120px]">
-                    #{sale.id.split('-')[0]}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{formatDate(sale.date)}</td>
-                  <td className="px-6 py-4 text-sm text-slate-700 font-medium">
-                    {sale.customerName || 'Consumidor Final'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={cn(
-                      "text-[10px] font-bold uppercase px-2 py-1 rounded-full",
-                      getMethodColor(sale.paymentMethod)
-                    )}>
-                      {getMethodLabel(sale.paymentMethod)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-black text-blue-600">{formatCurrency(sale.total)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
-                      {sale.status === 'completed' ? (
-                        <CheckCircle2 size={14} className="text-green-500" />
-                      ) : (
-                        <XCircle size={14} className="text-red-500" />
-                      )}
-                      <span className={cn(
-                        "text-[10px] font-bold uppercase",
-                        sale.status === 'completed' ? "text-green-700" : "text-red-700"
-                      )}>
-                        {sale.status === 'completed' ? 'Finalizada' : 'Cancelada'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); }}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        title="Ver Detalhes"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button 
-                        onClick={(e) => handleDeleteSale(sale.id, e)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        title="Excluir Venda"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[800px]">
+              <thead>
+                <tr className="bg-slate-50 text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                  <th className="px-6 py-4">Venda</th>
+                  <th className="px-6 py-4">Data/Hora</th>
+                  <th className="px-6 py-4">Cliente</th>
+                  <th className="px-6 py-4">Pagamento</th>
+                  <th className="px-6 py-4">Total</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredSales.map(sale => (
+                  <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800 line-clamp-1 max-w-[120px]">
+                      #{sale.id.split('-')[0]}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{formatDate(sale.date)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700 font-medium">
+                      {sale.customerName || 'Consumidor Final'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={cn(
+                        "text-[10px] font-bold uppercase px-2 py-1 rounded-full",
+                        getMethodColor(sale.paymentMethod)
+                      )}>
+                        {getMethodLabel(sale.paymentMethod)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-black text-blue-600">{formatCurrency(sale.total)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
+                        {sale.status === 'completed' ? (
+                          <CheckCircle2 size={14} className="text-green-500" />
+                        ) : (
+                          <XCircle size={14} className="text-red-500" />
+                        )}
+                        <span className={cn(
+                          "text-[10px] font-bold uppercase",
+                          sale.status === 'completed' ? "text-green-700" : "text-red-700"
+                        )}>
+                          {sale.status === 'completed' ? 'Finalizada' : 'Cancelada'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Ver Detalhes"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteSale(sale.id, e)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Excluir Venda"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
