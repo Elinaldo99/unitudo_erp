@@ -254,6 +254,46 @@ export function useERPData(session?: Session | null) {
     fetchData();
   }, [session]);
 
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'date'>) => {
+    if (!session?.user) return;
+    try {
+      const { error } = await supabase.from('transactions').insert({
+        ...transaction,
+        user_id: session.user.id,
+        date: new Date().toISOString()
+      });
+      if (error) throw error;
+      fetchData();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      throw error;
+    }
+  };
+
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    if (!session?.user) return;
+    try {
+      const { error } = await supabase.from('transactions').update(updates).eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      throw error;
+    }
+  };
+
+  const deleteTransaction = async (id: string) => {
+    if (!session?.user) return;
+    try {
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      throw error;
+    }
+  };
+
   const addSale = async (sale: Omit<Sale, 'id' | 'date'>) => {
     if (!session?.user) return;
 
@@ -525,11 +565,13 @@ export function useERPData(session?: Session | null) {
   };
 
   return {
-    products, saveProduct, suppliers, saveSupplier, deleteSupplier, deleteProduct, updateProductStock, inventoryMovements, addInventoryMovement, inventoryReasons, addInventoryReason,
+    products, saveProduct, deleteProduct, updateProductStock, 
+    suppliers, saveSupplier, deleteSupplier,
+    inventoryMovements, addInventoryMovement, 
+    inventoryReasons, addInventoryReason,
     sales, addSale,
     customers, saveCustomer,
-    suppliers,
-    transactions,
+    transactions, addTransaction, updateTransaction, deleteTransaction,
     cashSession, openCash, closeCash,
     users, saveUser, deleteUser, createInvite,
     currentUser,
