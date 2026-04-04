@@ -8,7 +8,13 @@ import {
   Package,
   MoreVertical,
   List,
-  LayoutGrid
+  LayoutGrid,
+  ArrowUpRight,
+  ArrowDownRight,
+  History,
+  AlertTriangle,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { useERPData } from '../hooks/useERPData';
 import { formatCurrency, cn } from '../lib/utils';
@@ -17,11 +23,42 @@ export default function Inventory({ data }: { data: ReturnType<typeof useERPData
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // ADJUSTMENT MODAL STATE
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [adjustType, setAdjustType] = useState<'entry' | 'exit'>('entry');
+  const [adjustQty, setAdjustQty] = useState('');
+  const [adjustReason, setAdjustReason] = useState('');
+
   const filteredProducts = data.products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.code.toLowerCase().includes(search.toLowerCase()) ||
     p.barcode.includes(search)
   );
+
+  const handleOpenAdjust = (product: any, type: 'entry' | 'exit' = 'entry') => {
+    setSelectedProduct(product);
+    setAdjustType(type);
+    setAdjustQty('');
+    setAdjustReason('');
+    setIsAdjustModalOpen(true);
+  };
+
+  const handleConfirmAdjust = async () => {
+    if (!selectedProduct || !adjustQty || Number(adjustQty) <= 0) return;
+
+    try {
+      await data.addInventoryMovement({
+        productId: selectedProduct.id,
+        type: adjustType,
+        quantity: Number(adjustQty),
+        reason: adjustReason || (adjustType === 'entry' ? 'Reposição Manual' : 'Retirada Manual')
+      });
+      setIsAdjustModalOpen(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -125,8 +162,11 @@ export default function Inventory({ data }: { data: ReturnType<typeof useERPData
               )}
               
               {viewMode === 'grid' && (
-                <button className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:text-blue-600">
-                  <MoreVertical size={18} />
+                <button 
+                  onClick={() => handleOpenAdjust(product)}
+                  className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-full shadow-sm text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:text-blue-600 z-10"
+                >
+                  <Plus size={18} />
                 </button>
               )}
             </div>
@@ -182,7 +222,25 @@ export default function Inventory({ data }: { data: ReturnType<typeof useERPData
                 </div>
               </div>
 
-              {/* GRID-ONLY FOOTER */}
+              {/* GRID-ONLY ADJUSTMENT BUTTONS */}
+              {viewMode === 'grid' && (
+                <div className="flex gap-2 mb-4">
+                  <button 
+                    onClick={() => handleOpenAdjust(product, 'entry')}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all group/btn"
+                  >
+                    <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                    Entrada
+                  </button>
+                  <button 
+                    onClick={() => handleOpenAdjust(product, 'exit')}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all group/btn"
+                  >
+                    <ArrowDownRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:translate-y-0.5 transition-transform" />
+                    Saída
+                  </button>
+                </div>
+              )}
               {viewMode === 'grid' && (
                 <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
@@ -197,15 +255,163 @@ export default function Inventory({ data }: { data: ReturnType<typeof useERPData
               )}
             </div>
 
-            {/* LIST-ONLY ACTION BUTTON */}
             {viewMode === 'list' && (
-              <button className="p-2 mr-2 transition-colors text-slate-400 hover:text-blue-600 shrink-0">
-                <MoreVertical size={20} />
-              </button>
+              <div className="flex gap-2 mr-2">
+                <button 
+                  onClick={() => handleOpenAdjust(product, 'entry')}
+                  className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                  title="Entrada"
+                >
+                  <Plus size={18} />
+                </button>
+                <button 
+                  onClick={() => handleOpenAdjust(product, 'exit')}
+                  className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+                  title="Saída"
+                >
+                  <ArrowDownRight size={18} />
+                </button>
+                <button className="p-2 transition-colors text-slate-400 hover:text-blue-600 shrink-0">
+                  <MoreVertical size={20} />
+                </button>
+              </div>
             )}
           </div>
         ))}
       </div>
+
+      {/* MODAL - AJUSTE DE ESTOQUE */}
+      {isAdjustModalOpen && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsAdjustModalOpen(false)} />
+          
+          <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* MODAL HEADER */}
+            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">Ajustar Estoque</h3>
+                <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-black">{selectedProduct.name}</p>
+              </div>
+              <button 
+                onClick={() => setIsAdjustModalOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* MODAL CONTENT */}
+            <div className="p-6 space-y-6">
+              {/* OPERATION SELECTOR */}
+              <div className="flex bg-slate-50 p-1.5 rounded-2xl gap-1.5">
+                <button 
+                  onClick={() => setAdjustType('entry')}
+                  className={cn(
+                    "flex-1 py-3 px-4 rounded-xl text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2",
+                    adjustType === 'entry' 
+                      ? "bg-white text-blue-600 shadow-sm ring-1 ring-blue-100" 
+                      : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  <Plus size={18} />
+                  Entrada
+                </button>
+                <button 
+                  onClick={() => setAdjustType('exit')}
+                  className={cn(
+                    "flex-1 py-3 px-4 rounded-xl text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2",
+                    adjustType === 'exit' 
+                      ? "bg-white text-red-600 shadow-sm ring-1 ring-red-100" 
+                      : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  <ArrowDownRight size={18} />
+                  Saída
+                </button>
+              </div>
+
+              {/* STATS PREVIEW */}
+              <div className="flex gap-4">
+                <div className="flex-1 bg-slate-50 p-4 rounded-2xl">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Estoque Atual</div>
+                  <div className="text-lg font-bold text-slate-700">{selectedProduct.stock} {selectedProduct.unit}</div>
+                </div>
+                <div className="flex-1 bg-blue-50/50 p-4 rounded-2xl">
+                  <div className="text-[10px] font-black text-blue-400 uppercase tracking-wider mb-1">Novo Estoque</div>
+                  <div className="text-lg font-bold text-blue-600">
+                    {adjustType === 'entry' 
+                      ? selectedProduct.stock + (Number(adjustQty) || 0)
+                      : selectedProduct.stock - (Number(adjustQty) || 0)
+                    } {selectedProduct.unit}
+                  </div>
+                </div>
+              </div>
+
+              {/* INPUT FIELDS */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Quantidade</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <Package size={18} />
+                    </div>
+                    <input 
+                      type="number"
+                      placeholder="0.00"
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-100 transition-all font-outfit"
+                      value={adjustQty}
+                      onChange={(e) => setAdjustQty(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Motivo da Ajuste</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(adjustType === 'entry' 
+                      ? ['Compra / Reposição', 'Devolução', 'Ajuste Manual', 'Outros'] 
+                      : ['Venda Manual', 'Avaria / Quebra', 'Consumo Próprio', 'Ajuste Manual']
+                    ).map(reason => (
+                      <button 
+                        key={reason}
+                        onClick={() => setAdjustReason(reason)}
+                        className={cn(
+                          "py-2.5 px-3 rounded-xl text-[10px] font-bold uppercase tracking-wider border-2 transition-all",
+                          adjustReason === reason 
+                            ? "bg-slate-800 border-slate-800 text-white" 
+                            : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                        )}
+                      >
+                        {reason}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* MODAL FOOTER */}
+            <div className="p-6 bg-slate-50 flex gap-3">
+              <button 
+                onClick={() => setIsAdjustModalOpen(false)}
+                className="flex-1 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmAdjust}
+                disabled={!adjustQty || Number(adjustQty) <= 0 || (adjustType === 'exit' && Number(adjustQty) > selectedProduct.stock)}
+                className={cn(
+                  "flex-[2] py-4 rounded-2xl text-sm font-black uppercase tracking-wider text-white transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:active:scale-100",
+                  adjustType === 'entry' ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200" : "bg-red-600 hover:bg-red-700 shadow-red-200"
+                )}
+              >
+                Confirmar {adjustType === 'entry' ? 'Entrada' : 'Saída'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {filteredProducts.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">
