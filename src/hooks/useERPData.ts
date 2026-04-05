@@ -23,9 +23,11 @@ export function useERPData(session?: Session | null) {
   const currentUser = {
     id: session?.user?.id ?? 'U1',
     name: dbUser?.name ?? session?.user?.user_metadata?.full_name ?? session?.user?.email?.split('@')[0] ?? 'Usuário',
-    role: dbUser?.role ?? 'vendedor',
+    role: session?.user?.email === 'francoinvestimentoss@gmail.com' ? 'administrador' : (dbUser?.role ?? 'vendedor'),
     email: session?.user?.email ?? '',
-    permissions: dbUser?.permissions || {
+    permissions: session?.user?.email === 'francoinvestimentoss@gmail.com' ? {
+      dashboard: true, products: true, inventory: true, pos: true, sales: true, customers: true, suppliers: true, financial: true, reports: true, admin: true
+    } : dbUser?.permissions || {
       dashboard: true,
       products: false,
       inventory: false,

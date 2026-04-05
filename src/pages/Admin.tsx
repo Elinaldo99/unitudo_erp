@@ -32,26 +32,28 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
     admin: false
   });
 
+  const defaultPermissions = {
+    dashboard: true,
+    products: false,
+    inventory: false,
+    pos: true,
+    sales: false,
+    customers: false,
+    suppliers: false,
+    financial: false,
+    reports: false,
+    admin: false
+  };
+
   const handleOpenEdit = (user: UserProfile) => {
     setEditingUser(user);
-    setPermissions(user.permissions);
+    setPermissions(user.permissions || defaultPermissions);
     setIsModalOpen(true);
   };
 
   const handleOpenCreate = () => {
     setEditingUser(null);
-    setPermissions({
-      dashboard: true,
-      products: false,
-      inventory: false,
-      pos: true,
-      sales: false,
-      customers: false,
-      suppliers: false,
-      financial: false,
-      reports: false,
-      admin: false
-    });
+    setPermissions(defaultPermissions);
     setIsModalOpen(true);
   };
 

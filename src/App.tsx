@@ -82,9 +82,12 @@ export default function App() {
 
   // Filter tabs based on user permissions
   const filteredTabs = tabs.filter(tab => {
-    // Admin tab is special - only for 'administrador' role or if explicitly permitted
+    // Administrador role always has access to everything
+    if (erpData.currentUser.role === 'administrador') return true;
+    
+    // Admin tab is special
     if (tab.id === 'admin') {
-      return erpData.currentUser.role === 'administrador' || erpData.currentUser.permissions?.admin;
+      return erpData.currentUser.permissions?.admin;
     }
     // Dashboard is always visible by default unless explicitly disabled
     if (tab.id === 'dashboard') return erpData.currentUser.permissions?.dashboard ?? true;

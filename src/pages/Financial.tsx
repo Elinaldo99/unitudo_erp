@@ -37,6 +37,8 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
     status: 'paid' as 'paid' | 'pending'
   });
 
+  const canEdit = data.currentUser?.role === 'administrador';
+
   const filteredTransactions = data.transactions.filter(t => {
     const tDate = new Date(t.date);
     const isSameMonth = tDate.getMonth() === selectedDate.getMonth() && 
@@ -234,13 +236,15 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
               </button>
             </div>
             
-            <button 
-              onClick={() => { resetForm(); setIsModalOpen(true); }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all hover:scale-105"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">Lançamento</span>
-            </button>
+            {canEdit && (
+              <button 
+                onClick={() => { resetForm(); setIsModalOpen(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all hover:scale-105"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">Lançamento</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -295,20 +299,22 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => openEdit(t)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          >
-                            <ArrowUpRight size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(t.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
+                        {canEdit && (
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => openEdit(t)}
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <ArrowUpRight size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(t.id)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -345,7 +351,7 @@ export default function Financial({ data }: { data: ReturnType<typeof useERPData
                   <div 
                     key={idx} 
                     onClick={() => {
-                      if (day) {
+                      if (day && canEdit) {
                         const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
                         resetForm(date);
                         setIsModalOpen(true);
