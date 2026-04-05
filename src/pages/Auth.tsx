@@ -40,7 +40,7 @@ export default function Auth() {
           });
 
           if (signUpError) {
-            setError("Erro ao ativar sua conta. Contate o administrador.");
+            setError(`Erro ao ativar sua conta: ${signUpError.message}`);
           } else if (signUpData.user) {
             // Criar o perfil oficial com as permissões do convite
             await supabase.from('profiles').insert({
