@@ -84,7 +84,7 @@ export interface UserProfile {
   email: string;
   phone?: string;
   role: 'administrador' | 'gerente' | 'vendedor';
-  status: 'ativo' | 'inativo';
+  status: 'ativo' | 'inativo' | 'convite';
   permissions: UserPermissions;
   createdAt?: string;
   updatedAt?: string;

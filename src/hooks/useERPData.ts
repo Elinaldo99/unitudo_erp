@@ -182,8 +182,12 @@ export function useERPData(session?: Session | null) {
         })));
       }
 
-      // 7. Profiles
+      // 7. Profiles and Invitations
       const { data: profilesData } = await supabase.from('profiles').select('*');
+      const { data: invitationsData } = await supabase.from('invitations').select('*');
+      
+      let allUsers: UserProfile[] = [];
+
       if (profilesData) {
         const mappedProfiles: UserProfile[] = profilesData.map(p => ({
           id: p.id,
@@ -206,7 +210,7 @@ export function useERPData(session?: Session | null) {
           createdAt: p.created_at,
           updatedAt: p.updated_at
         }));
-        setUsers(mappedProfiles);
+        allUsers = [...mappedProfiles];
 
         // Auto-create Admin profile if it doesn't exist
         const adminEmail = 'francoinvestimentoss@gmail.com';
@@ -231,7 +235,7 @@ export function useERPData(session?: Session | null) {
                admin: isAdmin
             }
           });
-          setUsers(prev => [...prev, {
+          allUsers.push({
             id: session.user.id,
             name: session.user.email?.split('@')[0] || 'Administrador',
             email: session.user.email || '',
@@ -249,9 +253,35 @@ export function useERPData(session?: Session | null) {
                reports: true,
                admin: isAdmin
             }
-          }]);
+          });
         }
       }
+
+      if (invitationsData) {
+        const mappedInvites: UserProfile[] = invitationsData.map(inv => ({
+          id: inv.id,
+          name: inv.name,
+          email: inv.email,
+          role: inv.role as UserProfile['role'],
+          status: 'convite' as const,
+          permissions: inv.permissions || {
+            dashboard: true,
+            products: false,
+            inventory: false,
+            pos: true,
+            sales: false,
+            customers: false,
+            suppliers: false,
+            financial: false,
+            reports: false,
+            admin: false
+          },
+          createdAt: inv.created_at
+        }));
+        allUsers = [...allUsers, ...mappedInvites];
+      }
+      
+      setUsers(allUsers);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -510,16 +540,33 @@ export function useERPData(session?: Session | null) {
 
   const saveUser = async (profile: Partial<UserProfile>) => {
     if (!session?.user || !profile.id) return;
-    const { error } = await supabase.from('profiles').upsert({
-      id: profile.id,
-      name: profile.name,
-      email: profile.email,
-      role: profile.role,
-      status: profile.status,
-      permissions: profile.permissions,
-      updated_at: new Date().toISOString()
-    });
-    if (error) throw error;
+
+    const existingUser = users.find(u => u.id === profile.id);
+    const isInvitation = existingUser?.status === 'convite';
+
+    if (isInvitation) {
+      if (profile.status && profile.status !== 'convite') {
+        throw new Error("Você não pode ativar um convite manualmente. O usuário será ativado automaticamente quando fizer o primeiro login.");
+      }
+      const { error } = await supabase.from('invitations').update({
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        permissions: profile.permissions
+      }).eq('id', profile.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from('profiles').upsert({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        status: profile.status,
+        permissions: profile.permissions,
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+    }
     fetchData();
   };
 
@@ -543,8 +590,15 @@ export function useERPData(session?: Session | null) {
        alert("Você não pode excluir seu próprio perfil.");
        return;
     }
-    const { error } = await supabase.from('profiles').delete().eq('id', id);
-    if (error) throw error;
+
+    const userToDelete = users.find(u => u.id === id);
+    if (userToDelete?.status === 'convite') {
+      const { error } = await supabase.from('invitations').delete().eq('id', id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      if (error) throw error;
+    }
     fetchData();
   };
 

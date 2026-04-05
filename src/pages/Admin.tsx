@@ -172,16 +172,16 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-1.5">
-                    {user.status === 'ativo' ? (
-                      <CheckCircle2 size={14} className="text-green-500" />
-                    ) : (
-                      <XCircle size={14} className="text-red-500" />
-                    )}
+                    {user.status === 'ativo' && <CheckCircle2 size={14} className="text-green-500" />}
+                    {user.status === 'inativo' && <XCircle size={14} className="text-red-500" />}
+                    {user.status === 'convite' && <Mail size={14} className="text-amber-500" />}
                     <span className={cn(
                       "text-[10px] font-bold uppercase",
-                      user.status === 'ativo' ? "text-green-700" : "text-red-700"
+                      user.status === 'ativo' && "text-green-700",
+                      user.status === 'inativo' && "text-red-700",
+                      user.status === 'convite' && "text-amber-700"
                     )}>
-                      {user.status}
+                      {user.status === 'convite' ? 'pendente' : user.status}
                     </span>
                   </div>
                 </td>
@@ -302,6 +302,7 @@ export default function Admin({ data }: { data: ReturnType<typeof useERPData> })
                         defaultValue={editingUser?.status || 'ativo'}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                       >
+                        {editingUser?.status === 'convite' && <option value="convite">Pendente (Convite)</option>}
                         <option value="ativo">Ativo</option>
                         <option value="inativo">Inativo</option>
                       </select>
